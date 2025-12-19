@@ -65,4 +65,44 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Get the listings owned by the user (as host).
+     */
+    public function listings(): HasMany
+    {
+        return $this->hasMany(Listing::class, 'host_id');
+    }
+
+    /**
+     * Get the bookings made by the user (as guest).
+     */
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class, 'guest_id');
+    }
+
+    /**
+     * Get reviews written by the user.
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * Get reviews about the user (as host).
+     */
+    public function hostReviews(): MorphMany
+    {
+        return $this->morphMany(Review::class, 'reviewable');
+    }
+
+    /**
+     * Get all media attachments for the user.
+     */
+    public function media(): MorphMany
+    {
+        return $this->morphMany(Media::class, 'mediable');
+    }
 }
