@@ -1,59 +1,101 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Makan API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A production-quality RESTful API for a listings-and-bookings marketplace. This project provides a robust backend where Hosts can list properties and Guests can search, book, and review them.
 
-## About Laravel
+## Business Scenario
+The **Makan** marketplace serves as a centralized platform for property rentals. It addresses the following core requirements:
+- **Property Management**: Hosts can list properties with detailed metadata, including amenities and media attachments.
+- **Booking Lifecycle**: Guests can discover properties via advanced filtering (city, price, availability) and manage the full booking lifecycle from pending to completion.
+- **Trust & Quality**: A polymorphic review system allows guests to rate both listings and hosts, ensuring marketplace transparency.
+- **Security & Roles**: Fine-grained access control ensures that sensitive operations (like amenity management or booking moderation) are restricted to authorized roles (Admin/Support).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Core Resources
+1. **User**: Managed via Laravel Sanctum with roles (Guest, Host, Admin, Support).
+2. **Listing**: The central entity for properties, supporting advanced search and Redis caching.
+3. **Booking**: Manages the stay duration, pricing logic (via Service Layer), and status transitions.
+4. **Amenity**: Categorize listings for improved discoverability.
+5. **Review**: Polymorphic ratings for listings and users.
+6. **Media**: Polymorphic file storage for property images/videos.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Tech Stack & Tools
 
-## Learning Laravel
+| Tool | Reason for Inclusion |
+| :--- | :--- |
+| **Laravel 12** | Chosen for its robust ecosystem, expressive syntax, and built-in support for modern API development patterns. |
+| **PostgreSQL 18** | Used for reliable, structured data storage with native support for advanced indexing and UUID types. |
+| **Redis 7** | Utilized for both high-performance caching of listing searches and as a reliable driver for the asynchronous queue system. |
+| **Laravel Sanctum** | Provides a lightweight but secure token-based authentication system suitable for SPAs and mobile apps. |
+| **Spatie Permissions** | The industry standard for managing roles and permissions in Laravel, providing clean, trait-based authorization. |
+| **Service Layer** | Business logic (e.g., pricing/availability) is decoupled from controllers into a **BookingService** to improve testability and DRY principles. |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+---
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Installation & Setup
 
-## Laravel Sponsors
+### 1. Clone & Dependencies
+```bash
+git clone https://github.com/zizouhuweidi/makan.git
+cd makan
+composer install
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 2. Environment Configuration
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+Edit your `.env` file to configure:
+- **DB_CONNECTION**: `pgsql` (host/port/database/credentials)
+- **QUEUE_CONNECTION**: `redis`
+- **CACHE_STORE**: `redis`
 
-### Premium Partners
+### 3. Local Infrastructure (Docker)
+Ensure Docker is running, then start the database and cache services:
+```bash
+docker-compose up -d
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+---
 
-## Contributing
+## Database Operations
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Migrations & Seeders
+This project uses **UUIDs** across all models. To initialize the database with roles, safe permissions, and demo data:
 
-## Code of Conduct
+```bash
+# Run fresh migrations and seed all data
+php artisan migrate:fresh --seed
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+**Seed Results:**
+- **Roles**: `admin`, `host`, `guest`, `support`.
+- **Demo Users**: 
+    - `admin@makan.com` (password: `password`)
+    - `host@makan.com` (password: `password`)
+    - `guest@makan.com` (password: `password`)
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Background Jobs
+Start the queue worker to process booking notifications:
+```bash
+php artisan queue:work
+```
 
-## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Usage & API Testing
+
+### Postman Collection
+For a comprehensive overview of all endpoints, including example payloads and automated authentication scripts, use the provided collection:
+
+👉 **[api/makan_api_collection.json](api/makan_api_collection.json)**
+
+**How to use:**
+1. Import the JSON file into Postman.
+2. Run the **Login** request once; a test script will automatically save the Bearer token to your environment.
+3. All subsequent protected requests will use this token.
+
+---
+
